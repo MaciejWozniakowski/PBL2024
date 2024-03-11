@@ -73,11 +73,11 @@ def callback(data):
 	odleglosc_prawo=LiczenieSredniejPrawo(data)  #//albo -1/8 i -3/8 
 	odleglosc_przod=LiczenieSredniejSrodek(data)   #// albo -1/8 i -3/8 
 	print("lewo:")
-	print odleglosc_lewo
+	print (odleglosc_lewo)
 	print("prawo:")
-	print odleglosc_prawo
+	print (odleglosc_prawo)
 	print("przod:")
-	print odleglosc_przod
+	print (odleglosc_przod)
 #	ruch(odleglosc_przod,odleglosc_prawo,odleglosc_lewo)
 	Peide(odleglosc_prawo,odleglosc_lewo,odleglosc_przod)
 
@@ -85,7 +85,6 @@ def dane():
 	rospy.init_node('revised_scan',anonymous=True)
 	sub = rospy.Subscriber('/scan', LaserScan, callback)
 	rospy.spin()
-
 
 
 def _clamp(value, limits):
