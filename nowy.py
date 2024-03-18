@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import roslib
-import sys 
+import sys
 import rospy
 import cv2 as cv
 import time
@@ -10,84 +10,95 @@ import sensor_msgs.msg
 import math
 from geometry_msgs.msg import Twist
 
-import select, termios, tty
+import select
+import termios
+import tty
 
 
-publisher = rospy.Publisher('/revised_scan',LaserScan, queue_size=10)
-scann=LaserScan()
+publisher = rospy.Publisher('/revised_scan', LaserScan, queue_size=10)
+scann = LaserScan()
 
-#print("kuba") 
+
+
+# print("kuba")
+
 
 def LiczenieSredniejLewo(datas):
-	x=0
-	n=len(datas.ranges)	
-	c_suma=2
-	kat = n/360
-	for i in range(n/8, n*2/8):
-		a=datas.ranges[i-1]
-		b=datas.ranges[i]
-		c=b*a*math.sin(math.radians(kat))/(math.sqrt(a*a+b*b-2*a*b*math.cos(math.radians(kat))))
-		if math.isnan(c) == False:
-			c_suma=c_suma+c
-			x=x+1
-		
-	c_avr=c_suma/x
-	return c_avr
+    x = 0
+    n = len(datas.ranges)
+    c_suma = 2
+    kat = n/360
+    for i in range(n/8, n*2/8):
+        a = datas.ranges[i-1]
+        b = datas.ranges[i]
+        c = b*a*math.sin(math.radians(kat)) / \
+            (math.sqrt(a*a+b*b-2*a*b*math.cos(math.radians(kat))))
+        if math.isnan(c) == False:
+            c_suma = c_suma+c
+            x = x+1
+
+    c_avr = c_suma/x
+    return c_avr
+
 
 def LiczenieSredniejPrawo(datas):
-	x=0
-	n=len(datas.ranges)	
-	c_suma=2
-	kat = n/360
-	for i in range(n*6/8, n*7/8):
-		a=datas.ranges[i-1]
-		b=datas.ranges[i]
-		c=b*a*math.sin(math.radians(kat))/(math.sqrt(a*a+b*b-2*a*b*math.cos(math.radians(kat))))
-		if math.isnan(c) == False:
-			c_suma=c_suma+c
-			x=x+1
-		
-	c_avr=c_suma/x
-	return c_avr
+    x = 0
+    n = len(datas.ranges)
+    c_suma = 2
+    kat = n/360
+    for i in range(n*6/8, n*7/8):
+        a = datas.ranges[i-1]
+        b = datas.ranges[i]
+        c = b*a*math.sin(math.radians(kat)) / \
+            (math.sqrt(a*a+b*b-2*a*b*math.cos(math.radians(kat))))
+        if math.isnan(c) == False:
+            c_suma = c_suma+c
+            x = x+1
+
+    c_avr = c_suma/x
+    return c_avr
+
 
 def LiczenieSredniejSrodek(datas):
-	x=1
-	n=len(datas.ranges)	
-	c_suma=2
-	kat = n/360
-	for i in range(n*(-1)/8, n*1/8):
-		a=datas.ranges[i-1]
-		b=datas.ranges[i]
-		c=b*a*math.sin(math.radians(kat))/(math.sqrt(a*a+b*b-2*a*b*math.cos(math.radians(kat))))
-		if math.isnan(c) == False:
-			c_suma=c_suma+c
-			x=x+1
-	print(x)	
-	c_avr=c_suma/x
-	return c_avr
+    x = 1
+    n = len(datas.ranges)
+    c_suma = 2
+    kat = n/360
+    for i in range(n*(-1)/20, n*1/20):
+        a = datas.ranges[i-1]
+        b = datas.ranges[i]
+        c = b*a*math.sin(math.radians(kat)) / \
+            (math.sqrt(a*a+b*b-2*a*b*math.cos(math.radians(kat))))
+        if math.isnan(c) == False:
+            c_suma = c_suma+c
+            x = x+1
+    print(x)
+    c_avr = c_suma/x
+    return c_avr
+
 
 def callback(data):
-	#n=len(data.ranges)
-	x=1.0/8.0
-	odleglosc_lewo=LiczenieSredniejLewo(data)
-	odleglosc_prawo=LiczenieSredniejPrawo(data)  #//albo -1/8 i -3/8 
-	odleglosc_przod=LiczenieSredniejSrodek(data)
-	main_maxx=find_max_distance(data)   #// albo -1/8 i -3/8
-	print("odleglosc:")	
-	print(main_maxx) 
-	print("lewo:")
-	print (odleglosc_lewo)
-	print("prawo:")
-	print (odleglosc_prawo)
-	print("przod:")
-	print (odleglosc_przod)
-#	ruch(odleglosc_przod,odleglosc_prawo,odleglosc_lewo)
-	Peide(odleglosc_prawo,odleglosc_lewo,odleglosc_przod,main_maxx)
+    # n=len(data.ranges)
+    x = 1.0/8.0
+    odleglosc_lewo = LiczenieSredniejLewo(data)
+    odleglosc_prawo = LiczenieSredniejPrawo(data)  # //albo -1/8 i -3/8
+    odleglosc_przod = LiczenieSredniejSrodek(data)
+    main_maxx = find_max_distance(data)  # // albo -1/8 i -3/8
+    print("odleglosc maksymalna:")
+    print(main_maxx)
+    # print("lewo:")
+    # print (odleglosc_lewo)
+    # print("prawo:")
+    # print (odleglosc_prawo)
+    print("przod:")
+    print (odleglosc_przod)
+    Peide(odleglosc_prawo, odleglosc_lewo, odleglosc_przod, main_maxx)
+
 
 def dane():
-	rospy.init_node('revised_scan',anonymous=True)
-	sub = rospy.Subscriber('/scan', LaserScan, callback)
-	rospy.spin()
+    rospy.init_node('revised_scan', anonymous=True)
+    sub = rospy.Subscriber('/scan', LaserScan, callback)
+    rospy.spin()
 
 
 def _clamp(value, limits):
@@ -100,16 +111,17 @@ def _clamp(value, limits):
         return lower
     return value
 
+
 def find_max_distance(datas):
-	maxx = -99999999
-	n=len(datas.ranges)	
-	kat = n/360
-	for i in range(n*(-1)/8, n*1/8):
-		a=datas.ranges[i-1]
-		# print(a, i)
-		if a > maxx and a < 10 and i >= -144 and i <= 142 and a is not None :
-			maxx = a
-	return maxx
+    maxx = -99999999
+    n = len(datas.ranges)
+    kat = n/360
+    for i in range(n*(-1)/8, n*1/8):
+        a = datas.ranges[i-1]
+        # print(a, i)
+        if a > maxx and a < 10 and i >= -144 and i <= 142 and a is not None:
+            maxx = a
+    return maxx
 
 
 class PID(object):
@@ -216,7 +228,8 @@ class PID(object):
         if dt is None:
             dt = now - self._last_time if (now - self._last_time) else 1e-16
         elif dt <= 0:
-            raise ValueError('dt has negative value {}, must be positive'.format(dt))
+            raise ValueError(
+                'dt has negative value {}, must be positive'.format(dt))
 
         if self.sample_time is not None and dt < self.sample_time and self._last_output is not None:
             # Only update every sample_time seconds
@@ -224,8 +237,10 @@ class PID(object):
 
         # Compute error terms
         error = self.setpoint - input_
-        d_input = input_ - (self._last_input if (self._last_input is not None) else input_)
-        d_error = error - (self._last_error if (self._last_error is not None) else error)
+        d_input = input_ - \
+            (self._last_input if (self._last_input is not None) else input_)
+        d_error = error - \
+            (self._last_error if (self._last_error is not None) else error)
 
         # Check if must map the error
         if self.error_map is not None:
@@ -241,7 +256,8 @@ class PID(object):
 
         # Compute integral and derivative terms
         self._integral += self.Ki * error * dt
-        self._integral = _clamp(self._integral, self.output_limits)  # Avoid integral windup
+        # Avoid integral windup
+        self._integral = _clamp(self._integral, self.output_limits)
 
         if self.differential_on_measurement:
             self._derivative = -self.Kd * d_input / dt
@@ -365,41 +381,51 @@ class PID(object):
 
 
 
-pid = PID(5, 0.1, 0.05, setpoint=main_maxx)
-
 
 
 
 def Peide(odl_p, odl_l, odl_przod, odl_max):
+    pid = PID(5, 0.7, 0.15, setpoint=odl_max)
+    delta = 0.1
+    settings = termios.tcgetattr(sys.stdin)
+    pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+    twist = Twist()
 
-	settings = termios.tcgetattr(sys.stdin)
-	pub = rospy.Publisher('cmd_vel', Twist,queue_size = 1)	
-	twist = Twist()
+    twist.linear.x = 0.3
+    
 
+    if twist.angular.z >20:
+        twist.angular.z = 20
+    if twist.angular.z < -20:
+        twist.angular.z = -20
 
-	twist.linear.x= 0.1
-	twist.angular.z = pid(odl_max)
+    if odl_p > odl_l:
+        twist.angular.z = -pid(odl_przod)
+    else:
+        twist.angular.z = pid(odl_przod)
 
-	#if odl_przod <= 1 and odl_p <= 1:
-		
-	#	twist.linear.x= 0.1
-		
-if __name__ == '__main__':
-	
+    if abs(odl_l - odl_p) <= delta:
+        twist.angular.z = 0
 
-	#if odl_przod <= 1 and odl_l <=1:
-		
-	#	twist.linear.x= 0.1
+    print(twist.angular.z)
+    
 
+   # if odl_przod <= 1 and odl_p <= 1:
 
-	
-	pub.publish(twist)
+    #    twist.linear.x= 0.1
+
+    #if odl_przod <= 1 and odl_l <=1:
+
+     #   twist.linear.x= 0.1
+
+    pub.publish(twist)
+
 
 def main(args):
 
-	dane()
+    dane()
+    print("kuba")
 
-	print("kuba")
 
-if __name__=='__main__':
-	main(sys.argv)
+if __name__ == '__main__':
+    main(sys.argv)
