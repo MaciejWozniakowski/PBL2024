@@ -1,20 +1,15 @@
 #!/usr/bin/env python
-import roslib
 import sys
 import rospy
-import cv2 as cv
-import time
 from sensor_msgs.msg import LaserScan
-import sensor_msgs.msg
 import math
 from geometry_msgs.msg import Twist
-import termios
 
 publisher = rospy.Publisher('/revised_scan', LaserScan, queue_size=10)
 scann = LaserScan()
 
 
-def LiczenieSredniejLewo(datas):
+def count_average_distance_left(datas):
     x = 0
     n = len(datas.ranges)
     c_suma = 2
@@ -32,7 +27,7 @@ def LiczenieSredniejLewo(datas):
     return c_avr
 
 
-def LiczenieSredniejPrawo(datas):
+def count_average_distance_right(datas):
     x = 0
     n = len(datas.ranges)
     c_suma = 2
@@ -50,7 +45,7 @@ def LiczenieSredniejPrawo(datas):
     return c_avr
 
 
-def LiczenieSredniejSrodek(datas):
+def count_average_distance_ahead(datas):
     x = 1
     n = len(datas.ranges)
     c_suma = 2
@@ -69,20 +64,19 @@ def LiczenieSredniejSrodek(datas):
 
 
 def callback(data):
-    x = 1.0/8.0
-    odleglosc_lewo = LiczenieSredniejLewo(data)
-    odleglosc_prawo = LiczenieSredniejPrawo(data)  # albo -1/8 i -3/8
-    odleglosc_przod = LiczenieSredniejSrodek(data)
-    main_maxx = find_max_distance(data)  # albo -1/8 i -3/8
-    print("odleglosc maksymalna:")
-    print(main_maxx)
-    print("lewo:")
-    print (odleglosc_lewo)
-    print("prawo:")
-    print (odleglosc_prawo)
-    print("przod:")
-    print (odleglosc_przod)
-    Peide(odleglosc_prawo, odleglosc_lewo, odleglosc_przod, main_maxx)
+    distance_left = count_average_distance_left(data)
+    distance_right = count_average_distance_right(data)  # -1/8 and -3/8
+    distance_ahead = count_average_distance_ahead(data)
+    max_distance = find_max_distance(data)  # -1/8 and -3/8
+    print("max_distance:")
+    print(max_distance)
+    print("left:")
+    print (distance_left)
+    print("right:")
+    print (distance_right)
+    print("ahead:")
+    print (distance_ahead)
+    move(distance_right, distance_left, distance_ahead, max_distance)
 
 
 def dane():
@@ -103,7 +97,7 @@ def _clamp(value, limits):
 
 
 def find_max_distance(datas):
-    maxx = -99999999
+    maxx = float('-inf')
     n = len(datas.ranges)
     kat = n/360
     for i in range(n*(-1)/8, n*1/8):
@@ -115,8 +109,6 @@ def find_max_distance(datas):
 
 
 class PID(object):
-    """A simple PID controller."""
-
     def __init__(
         self,
         Kp=1.0,
@@ -153,22 +145,18 @@ class PID(object):
         self._last_input = None
 
         if time_fn is not None:
-            # Use the user supplied time function
             self.time_fn = time_fn
         else:
             import time
 
             try:
-                # Get monotonic time to ensure that time deltas are always positive
                 self.time_fn = time.monotonic
             except AttributeError:
-                # time.monotonic() not available (using python < 3.3), fallback to time.time()
                 self.time_fn = time.time
 
         self.output_limits = output_limits
         self.reset()
 
-        # Set initial state of the controller
         self._integral = _clamp(starting_output, output_limits)
 
     def __call__(self, input_, dt=None):
@@ -184,31 +172,22 @@ class PID(object):
                 'dt has negative value {}, must be positive'.format(dt))
 
         if self.sample_time is not None and dt < self.sample_time and self._last_output is not None:
-            # Only update every sample_time seconds
             return self._last_output
 
-        # Compute error terms
         error = self.setpoint - input_
         d_input = input_ - \
             (self._last_input if (self._last_input is not None) else input_)
         d_error = error - \
             (self._last_error if (self._last_error is not None) else error)
-
-        # Check if must map the error
         if self.error_map is not None:
             error = self.error_map(error)
 
-        # Compute the proportional term
         if not self.proportional_on_measurement:
-            # Regular proportional-on-error, simply set the proportional term
             self._proportional = self.Kp * error
         else:
-            # Add the proportional error on measurement to error_sum
             self._proportional -= self.Kp * d_input
 
-        # Compute integral and derivative terms
         self._integral += self.Ki * error * dt
-        # Avoid integral windup
         self._integral = _clamp(self._integral, self.output_limits)
 
         if self.differential_on_measurement:
@@ -216,11 +195,9 @@ class PID(object):
         else:
             self._derivative = self.Kd * d_error / dt
 
-        # Compute final output
         output = self._proportional + self._integral + self._derivative
         output = _clamp(output, self.output_limits)
 
-        # Keep track of state
         self._last_output = output
         self._last_input = input_
         self._last_error = error
@@ -228,17 +205,6 @@ class PID(object):
 
         return output
 
-    def __repr__(self):
-        return (
-            '{self.__class__.__name__}('
-            'Kp={self.Kp!r}, Ki={self.Ki!r}, Kd={self.Kd!r}, '
-            'setpoint={self.setpoint!r}, sample_time={self.sample_time!r}, '
-            'output_limits={self.output_limits!r}, auto_mode={self.auto_mode!r}, '
-            'proportional_on_measurement={self.proportional_on_measurement!r}, '
-            'differential_on_measurement={self.differential_on_measurement!r}, '
-            'error_map={self.error_map!r}'
-            ')'
-        ).format(self=self)
 
     @property
     def components(self):
@@ -332,13 +298,11 @@ class PID(object):
         self._last_input = None
 
 
-def Peide(distance_right, distance_left, distance_ahead, odl_max):
+def move(distance_right, distance_left, distance_ahead, odl_max):
     pid = PID(5, 1, 0.15, setpoint=odl_max)
     delta = 0.1
-    settings = termios.tcgetattr(sys.stdin)
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
     twist = Twist()
-    t_end = time.time() + 3
     twist.linear.x = 0.6
     
 
@@ -355,11 +319,9 @@ def Peide(distance_right, distance_left, distance_ahead, odl_max):
     if abs(distance_left - distance_right) <= delta:
         twist.angular.z = 0
 
-    if distance_ahead <=0.5:
-	twist.linear.x = -0.2
-	twist.angular.z = 0
-
-
+    if distance_ahead <= 0.5:
+        twist.linear.x = -0.2
+        twist.angular.z = 0
 
  #   if distance_left < 0.25:
 #	twist.angular.z = pid(distance_ahead)
@@ -384,10 +346,8 @@ def Peide(distance_right, distance_left, distance_ahead, odl_max):
     #elif distance_left <=0.25:
 	#twist.linear.x = 0.1
 	#twist.angular.z = -pid(distance_ahead)
-
-
-
-
+ 
+    print("twist:")
     print(twist.angular.z)
     
 
@@ -396,7 +356,6 @@ def Peide(distance_right, distance_left, distance_ahead, odl_max):
 
 def main(args):
     dane()
-    print("kuba")
 
 
 if __name__ == '__main__':
