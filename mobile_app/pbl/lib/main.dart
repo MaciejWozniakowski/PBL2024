@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:ssh2/ssh2.dart';
 
 void main() {
   runApp(const UtilsApp());
@@ -9,13 +12,9 @@ class UtilsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'Jetracer Utils App',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Jetracer Steering App'),
+      home: MyHomePage(title: 'Jetracer Steering App'),
     );
   }
 }
@@ -32,27 +31,64 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   bool _lidar = false;
   bool _camera = false;
+  bool _jetracer = false;
 
-  void _handleLidar() {
+  Future<void> _handleLidar() async {
     setState(() {
       _lidar = !_lidar;
     });
-    // Tutaj możesz umieścić kod, który ma być wykonywany po wybraniu opcji 1
+
+    if (_lidar) {
+      // Adres IP oraz dane uwierzytelniające
+      const String host = 'to be filled in';
+      const int port = 22;
+      const String username = 'jetson';
+      const String password = 'jetson';
+
+      final ssh = SSHClient(
+        host: host,
+        port: port,
+        username: username,
+        passwordOrKey: password,
+      );
+
+      try {
+        await ssh.connect();
+        String? result = await ssh.execute('ls'); // Tu wpisz swoją komendę SSH
+        log('Result: $result');
+      } on Exception catch (e) {
+        log('Error: $e');
+      } finally {
+        await ssh.disconnect();
+      }
+    }
   }
 
   void _handleCamera() {
     setState(() {
-      _lidar = !_lidar;
+      _camera = !_camera;
     });
-    // Tutaj możesz umieścić kod, który ma być wykonywany po wybraniu opcji 1
+    // Tutaj możesz umieścić kod, który ma być wykonywany po wybraniu opcji 2
+  }
+
+  void _handleJetracer() {
+    setState(() {
+      _jetracer = !_jetracer;
+    });
+    // Tutaj możesz umieścić kod, który ma być wykonywany po wybraniu opcji 3
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromRGBO(232, 223, 202, 1.0),
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 27, 154, 59),
-        title: Text(widget.title),
+        backgroundColor: const Color.fromRGBO(26, 77, 46, 1.0),
+        title: Text(
+          widget.title,
+          style: const TextStyle(color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: <Widget>[
           PopupMenuButton(
             itemBuilder: (BuildContext context) {
@@ -62,6 +98,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Text('Uruchom komponenty sterujące'),
                 ),
                 const PopupMenuDivider(),
+                CheckedPopupMenuItem(
+                  value: _jetracer,
+                  checked: _jetracer,
+                  onTap: _handleJetracer,
+                  child: const Text('Jetracer'),
+                ),
                 CheckedPopupMenuItem(
                   value: _lidar,
                   checked: _lidar,
@@ -90,6 +132,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   margin: const EdgeInsets.all(15.0),
                   padding: const EdgeInsets.all(3.0),
                   decoration: BoxDecoration(
+                    color: const Color.fromRGBO(79, 111, 82, 1.0),
                     border: Border.all(
                       color: Colors.black,
                       width: 2.0,
@@ -100,6 +143,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: () {
                       // Obsłuż kliknięcie przycisku w górę
                     },
+                    color: Colors.black,
                   ),
                 ),
               ],
@@ -111,6 +155,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   margin: const EdgeInsets.all(15.0),
                   padding: const EdgeInsets.all(3.0),
                   decoration: BoxDecoration(
+                    color: const Color.fromRGBO(79, 111, 82, 1.0),
                     border: Border.all(
                       color: Colors.black,
                       width: 2.0,
@@ -121,12 +166,14 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: () {
                       // Obsłuż kliknięcie przycisku wstecz
                     },
+                    color: Colors.black,
                   ),
                 ),
                 Container(
                   margin: const EdgeInsets.all(15.0),
                   padding: const EdgeInsets.all(3.0),
                   decoration: BoxDecoration(
+                    color: const Color.fromRGBO(79, 111, 82, 1.0),
                     border: Border.all(
                       color: Colors.black,
                       width: 2.0,
@@ -137,6 +184,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: () {
                       // Obsłuż kliknięcie przycisku do przodu
                     },
+                    color: Colors.black,
                   ),
                 ),
               ],
@@ -148,6 +196,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   margin: const EdgeInsets.all(15.0),
                   padding: const EdgeInsets.all(3.0),
                   decoration: BoxDecoration(
+                    color: const Color.fromRGBO(79, 111, 82, 1.0),
                     border: Border.all(
                       color: Colors.black,
                       width: 2.0,
@@ -158,6 +207,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: () {
                       // Obsłuż kliknięcie przycisku w dół
                     },
+                    color: Colors.black,
                   ),
                 ),
               ],
