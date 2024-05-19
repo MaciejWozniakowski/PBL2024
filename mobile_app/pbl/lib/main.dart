@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'joystick.dart';
 import 'package:flutter/material.dart';
 import 'package:ssh2/ssh2.dart';
 
