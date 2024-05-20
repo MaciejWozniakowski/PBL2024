@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 
-import 'joy_stick.dart';
+import 'joystick.dart';
 import 'package:flutter/material.dart';
 import 'package:ssh2/ssh2.dart';
 
@@ -35,10 +35,6 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _camera = false;
   bool _jetracer = false;
   bool _roscore = false;
-  void callback(x, y){
-    log('callback x');
-  }
-
 
   Future<void> _handleLidar() async {
     setState(() {
@@ -265,11 +261,100 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: JoyStick(radius: 100.0, stickRadius: 20, callback: callback),
-
-
-
-
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                  margin: const EdgeInsets.all(15.0),
+                  padding: const EdgeInsets.all(3.0),
+                  decoration: BoxDecoration(
+                    color: const Color.fromRGBO(79, 111, 82, 1.0),
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 2.0,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_upward),
+                    onPressed: () {
+                      // Obsłuż kliknięcie przycisku w górę
+                    },
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                Container(
+                  margin: const EdgeInsets.all(15.0),
+                  padding: const EdgeInsets.all(3.0),
+                  decoration: BoxDecoration(
+                    color: const Color.fromRGBO(79, 111, 82, 1.0),
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 2.0,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () {
+                      // Obsłuż kliknięcie przycisku wstecz
+                    },
+                    color: Colors.black,
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.all(15.0),
+                  padding: const EdgeInsets.all(3.0),
+                  decoration: BoxDecoration(
+                    color: const Color.fromRGBO(79, 111, 82, 1.0),
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 2.0,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_forward),
+                    onPressed: () {
+                      // Obsłuż kliknięcie przycisku do przodu
+                    },
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                  margin: const EdgeInsets.all(15.0),
+                  padding: const EdgeInsets.all(3.0),
+                  decoration: BoxDecoration(
+                    color: const Color.fromRGBO(79, 111, 82, 1.0),
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 2.0,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_downward),
+                    onPressed: () {
+                      // Obsłuż kliknięcie przycisku w dół
+                    },
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
